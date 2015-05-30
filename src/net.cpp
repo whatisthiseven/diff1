@@ -3,6 +3,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "init.h"
+#include "irc.h"
 #include "chainparams.h"
 #include "db.h"
 #include "net.h"
@@ -27,7 +29,7 @@
 using namespace std;
 using namespace boost;
 
-static const int MAX_OUTBOUND_CONNECTIONS = 16;
+static const int MAX_OUTBOUND_CONNECTIONS = 32;
 
 bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
 
@@ -130,10 +132,13 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer)
 bool RecvLine(SOCKET hSocket, string& strLine)
 {
     strLine = "";
-    while (true)
+    while (!ShutdownRequested())
     {
         char c;
-        int nBytes = recv(hSocket, &c, 1, 0);
+        int nBytes = recv(hSocket, &c, 1, MSG_DONTWAIT);
+	if(ShutdownRequested())
+	    return false;
+
         if (nBytes > 0)
         {
             if (c == '\n')
@@ -175,6 +180,7 @@ bool RecvLine(SOCKET hSocket, string& strLine)
             }
         }
     }
+    return false;
 }
 
 int GetnScore(const CService& addr)
@@ -1008,7 +1014,9 @@ void ThreadMapPort()
         string strDesc = "Crave " + FormatFullVersion();
 
         try {
-          while (true) {
+          while (!ShutdownRequested()) {
+		boost::this_thread::interruption_point();
+
 #ifndef UPNPDISCOVER_SUCCESS
                 /* miniupnpc 1.5 */
                 r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
@@ -1655,6 +1663,9 @@ void StartNode(boost::thread_group& threadGroup)
     // Map ports with UPnP
     MapPort(GetBoolArg("-upnp", USE_UPNP));
 #endif
+
+    // Get addresses from IRC and advertise ours
+    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "irc", &ThreadIRCSeed));
 
     // Send and receive from sockets, accept connections
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "net", &ThreadSocketHandler));

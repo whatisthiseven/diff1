@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = crave-qt
-VERSION = 1.1.2.1
+VERSION = 1.2.0.0
 INCLUDEPATH += src src/json src/qt
 QT += network
 DEFINES += ENABLE_WALLET
@@ -171,6 +171,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/core.h \
     src/main.h \
     src/miner.h \
+    src/irc.h \
     src/net.h \
     src/key.h \
     src/db.h \
@@ -254,6 +255,7 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/main.cpp \
     src/miner.cpp \
     src/init.cpp \
+    src/irc.cpp \
     src/net.cpp \
     src/checkpoints.cpp \
     src/addrman.cpp \

@@ -115,6 +115,8 @@ private:
     /** Create system tray (notification) icon */
     void createTrayIcon();
 
+    void clearWidgets();
+
 public slots:
     /** Set number of connections shown in the UI */
     void setNumConnections(int count);
